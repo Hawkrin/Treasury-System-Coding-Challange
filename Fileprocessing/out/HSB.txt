@@ -1,0 +1,2 @@
+Konto;Belopp;Datum;Typ
+13452;2345;2020-01-30;FUTURE
