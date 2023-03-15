@@ -1,14 +1,16 @@
-﻿using System;
+﻿using System; // imports functionalities
 
 class Program {
 
-
-
     /*
     1) tar in ett filnamn, sökvägen till en utdata mapp samt ett datum (på ISO format)
-    2) Programmet ska läsa angiven fil och sedan skapa en fil per bank i utdata mappen.
+    2) Programmet ska läsa angiven fil och sedan skapa en fil per bank i utdata mappen. -> lägga till Typ
     3) Ibland kommer det med gamla eller framtida transaktion i filen därför ska varje transaktion kategoriseras efter datum så att nästa program i kedjan vet hur transaktionerna ska behandlas.
     */
+
+    // dotnet create
+    // dotnet build
+    // dotnet run A:/KOD/random/C#/treasury_systems/Fileprocessing/data/in.txt A:/KOD/random/C#/treasury_systems/Fileprocessing/out 2020-01-29
 
 
     public static void FileProcess(string inputFile, string outputFolder, string inputDate) {
@@ -30,10 +32,11 @@ class Program {
         }
 
         try {
-            
-            using (StreamReader reader = new StreamReader(inputFile)) {
-                string header = reader.ReadLine(); // Skip the header line
-                string line, type = "";
+            using (StreamReader reader = new StreamReader(inputFile)) { // scope of StreamReader
+                string? header = reader.ReadLine(); // Change the header
+                string? newHeader = header?.Replace("Bank", "Typ");
+                string? line;
+                string type = "";
                 DateTime InputDate = DateTime.Parse(inputDate);
 
                 // the bank files
@@ -47,35 +50,33 @@ class Program {
                     string bankName = substrings[3];
 
                     // creates files for the lines in in.txt, except for Bank.
-                    if (bankName != "Bank") {
-                        string newFilePath = Path.Combine(outputFolder, Path.ChangeExtension(bankName, ".txt"));
-                        bankName = Path.GetFileNameWithoutExtension(newFilePath);
+                    string newFilePath = Path.Combine(outputFolder, Path.ChangeExtension(bankName, ".txt"));
 
-                        // if the file doesnt exist then the header is written
-                        if (!bankFiles.ContainsKey(bankName)) {
-                            File.WriteAllText(newFilePath, "Konto;Belopp;Datum;Typ\n");
-                            bankFiles[bankName] = newFilePath;
-                        }
+                    // if the file doesnt exist then the header is written
+                    if (!bankFiles.ContainsKey(bankName)) {
+                        File.WriteAllText(newFilePath, newHeader + "\n");
+                        bankFiles[bankName] = newFilePath;
+                        Console.WriteLine($"A file named {bankName} has been created ");
+                    }
 
-                        switch (DateTime.Compare(InputDate, date)) {
-                            case 0:
-                                type = "ACTIVE";
-                                break;
-                            case 1:
-                                type = "OLD";
-                                break;
-                            default:
-                                type = "FUTURE";
-                                break;
-                        }
+                    switch (DateTime.Compare(InputDate, date)) {
+                        case 0: // ==
+                            type = "ACTIVE";
+                            break;
+                        case 1: // >
+                            type = "OLD";
+                            break;
+                        default: // <
+                            type = "FUTURE";
+                            break;
+                    }
 
-                        // append to existing file or write to new file
-                        if (bankFiles.TryGetValue(bankName, out string filePath)) {
-                            File.AppendAllText(filePath, $"{account};{amount};{date.ToString("yyyy-MM-dd")};{type}\n");
-                        } else {
-                            File.AppendAllText(newFilePath, $"{account};{amount};{date.ToString("yyyy-MM-dd")};{type}\n");
-                            bankFiles[bankName] = newFilePath;
-                        }
+                    // append to existing file or write to new file
+                    if (bankFiles.TryGetValue(bankName, out string? filePath)) {
+                        File.AppendAllText(filePath, $"{account};{amount};{date.ToString("yyyy-MM-dd")};{type}\n");;
+                    } else {
+                        File.AppendAllText(newFilePath, $"{account};{amount};{date.ToString("yyyy-MM-dd")};{type}\n");
+                        bankFiles[bankName] = newFilePath;
                     }
                 }
             } 
@@ -86,6 +87,7 @@ class Program {
 
 
     public static void Main(string[] args) {
+
         if (args.Length != 3) {
             Console.WriteLine("Usage: FileProcess.exe inputFile outputFolder inputDate");
             return;
